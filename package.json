@@ -1,0 +1,66 @@
+{
+  "name": "rn-bug-analyzer",
+  "displayName": "React Native Bug Analyzer",
+  "description": "Analyze React Native errors using AI",
+  "version": "0.1.0",
+  "publisher": "amanda",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "rn-bug-analyzer",
+          "title": "RN Bug Analyzer",
+          "icon": "$(bug)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "rn-bug-analyzer.analyze",
+        "title": "Analyze React Native Error",
+        "category": "RN Bug Analyzer",
+        "icon": "$(bug)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "rn-bug-analyzer.analyze"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "rn-bug-analyzer.analyze",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a"
+      }
+    ],
+    "configuration": {
+      "title": "React Native Error Analyzer",
+      "properties": {
+        "rn-bug-analyzer.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API Key"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "openai": "^4.0.0"
+  }
+}
