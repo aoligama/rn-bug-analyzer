@@ -44,14 +44,14 @@ async function analyzeWithAI(error) {
                 {
                     role: "user",
                     content: `Analyze this React Native error and provide a solution in this exact JSON format:
-{
-    "type": "error type here",
-    "cause": "detailed cause here",
-    "solution": "solution with code examples here",
-    "prevention": "prevention tips here"
-}
+                        {
+                            "type": "error type here",
+                            "cause": "detailed cause here",
+                            "solution": "solution with code examples here",
+                            "prevention": "prevention tips here"
+                        }
 
-Error: ${error}`
+                        Error: ${error}`
                 }
             ],
             temperature: 0.3,
@@ -139,145 +139,293 @@ function getWebviewContent() {
     return `<!DOCTYPE html>
     <html>
     <head>
+        <meta charset="UTF-8">
         <style>
             body { 
-                padding: 1rem; 
+                padding: 1.5rem; 
                 font-family: system-ui, -apple-system, sans-serif;
                 color: var(--vscode-editor-foreground);
                 background-color: var(--vscode-editor-background);
+                line-height: 1.5;
+                position: relative;
+            }
+            h2 {
+                margin-bottom: 1.5rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             }
             textarea { 
                 width: 100%; 
                 min-height: 120px; 
                 margin: 1rem 0;
-                padding: 8px;
+                padding: 12px;
                 background-color: var(--vscode-input-background);
                 color: var(--vscode-input-foreground);
                 border: 1px solid var(--vscode-input-border);
-                border-radius: 4px;
+                border-radius: 6px;
+                font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace;
+                font-size: 13px;
+                line-height: 1.5;
+                resize: vertical;
             }
-            button {
+            textarea:focus {
+                outline: none;
+                border-color: var(--vscode-focusBorder);
+            }
+            button { 
                 background-color: var(--vscode-button-background);
                 color: var(--vscode-button-foreground);
                 border: none;
                 padding: 8px 16px;
                 border-radius: 4px;
                 cursor: pointer;
+                font-size: 13px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
             }
             button:hover {
-                background-color: var(--vscode-button-hoverBackground);
-            }
-            #result { 
-                white-space: pre-wrap;
-                margin-top: 1rem;
-                padding: 1rem;
-                background-color: var(--vscode-editor-inactiveSelectionBackground);
-                border-radius: 4px;
+                opacity: 0.9;
             }
             .error {
                 color: var(--vscode-errorForeground);
                 padding: 1rem;
                 border-left: 3px solid var(--vscode-errorForeground);
-            }
-            .loading {
-                margin-top: 1rem;
-                color: var(--vscode-textLink-foreground);
-            }
-            .section {
+                background-color: var(--vscode-inputValidation-errorBackground);
                 margin: 1rem 0;
-                padding: 1rem;
+                border-radius: 0 4px 4px 0;
+            }
+            #output { 
+                margin: 1rem 0;
+                padding: 8px;
+                font-size: 13px;
+                color: var(--vscode-textPreformat-foreground);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .analysis {
+                margin-top: 1.5rem;
+            }
+            .analysis h3 {
+                font-size: 14px;
+                margin: 0 0 1rem 0;
+                padding: 4px 8px;
+                background-color: var(--vscode-badge-background);
+                color: var(--vscode-badge-foreground);
+                border-radius: 4px;
+                display: inline-block;
+            }
+            .analysis div {
+                padding: 0.75rem;
+                margin: 0.5rem 0;
                 background-color: var(--vscode-editor-inactiveSelectionBackground);
                 border-radius: 4px;
+                font-size: 13px;
+                position: relative; /* For positioning copy button if needed */
             }
-            .section-title {
-                font-weight: bold;
-                margin-bottom: 0.5rem;
+            .analysis strong {
+                color: var(--vscode-textLink-foreground);
             }
-            code {
-                background-color: var(--vscode-textPreformat-background);
-                padding: 2px 4px;
-                border-radius: 3px;
+            /* Spinner Styles */
+            .spinner {
+                border: 4px solid var(--vscode-editor-background);
+                border-top: 4px solid var(--vscode-editor-foreground);
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                animation: spin 1s linear infinite;
+                display: inline-block;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            /* Toast Notification Styles */
+            #toast {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background-color: var(--vscode-editorWidget-background);
+                color: var(--vscode-editorWidget-foreground);
+                border: 1px solid var(--vscode-editorWidget-border);
+                padding: 10px 16px;
+                border-radius: 4px;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                z-index: 9999;
+            }
+            #toast.show {
+                opacity: 1;
+            }
+            .copy-btn {
+                margin-left: 8px;
+                background-color: var(--vscode-button-secondaryBackground);
+                color: var(--vscode-button-secondaryForeground);
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                padding: 4px 8px;
+                float: right;
+            }
+            .copy-btn:hover {
+                opacity: 0.9;
             }
         </style>
     </head>
     <body>
-        <h2>React Native Error Analyzer</h2>
-        <textarea id="errorInput" placeholder="Paste your React Native error message here..."></textarea>
-        <button id="analyzeBtn">Analyze Error</button>
-        <div id="loading" class="loading" style="display: none;">Analyzing...</div>
+        <h2>🔍 React Native Error Analyzer</h2>
+        
+        <!-- Output area (displays status, e.g. "Analyzing...", plus spinner) -->
+        <div id="output">Ready to analyze errors.</div>
+        
+        <!-- Error input text area -->
+        <textarea id="errorInput" placeholder="Paste your React Native error message here..." spellcheck="false"></textarea>
+        
+        <!-- Analyze button -->
+        <button id="analyzeBtn" onclick="handleAnalyze()">
+            <span>⚡</span>
+            Analyze Error
+        </button>
+        
+        <!-- Results area -->
         <div id="result"></div>
-
+        
+        <!-- Toast notification -->
+        <div id="toast"></div>
+        
         <script>
             const vscode = acquireVsCodeApi();
+            const output = document.getElementById('output');
             const errorInput = document.getElementById('errorInput');
-            const analyzeBtn = document.getElementById('analyzeBtn');
-            const loading = document.getElementById('loading');
             const result = document.getElementById('result');
+            const toast = document.getElementById('toast');
 
-            // Get selected text if any
-            vscode.postMessage({ command: 'getSelectedText' });
-
-            analyzeBtn.onclick = () => {
+            function handleAnalyze() {
                 const error = errorInput.value.trim();
+                
+                // Show spinner and message
+                output.innerHTML = '<div class="spinner"></div> Analyzing...';
+
                 if (!error) {
-                    result.innerHTML = '<div class="error">Please enter an error message to analyze.</div>';
+                    result.innerHTML = '<div class="error">Please enter an error message</div>';
+                    hideSpinner();
                     return;
                 }
-                
-                loading.style.display = 'block';
-                result.innerHTML = '';
-                
+
                 vscode.postMessage({
                     command: 'analyze',
                     error: error
                 });
-            };
+            }
 
-            window.addEventListener('message', event => {
-                loading.style.display = 'none';
+            // Hide spinner by reverting to normal text in #output
+            function hideSpinner(message = 'Analysis complete') {
+                output.innerHTML = message;
+            }
+
+            // Show toast notification with some text
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+
+            // Copy text from a given element by ID
+            function copyTextFromElement(elementId) {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                const textToCopy = el.textContent || el.innerText;
                 
-                if (event.data.type === 'error') {
-                    result.innerHTML = '<div class="error">' + event.data.message + '</div>';
-                    return;
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        showToast('Copied to clipboard!');
+                    })
+                    .catch(err => {
+                        showToast('Failed to copy!');
+                        console.error(err);
+                    });
+            }
+
+            // Handle messages from the extension
+            window.addEventListener('message', event => {
+                const message = event.data;
+
+                switch (message.type) {
+                    case 'error':
+                        result.innerHTML = '<div class="error">' + message.message + '</div>';
+                        hideSpinner('Analysis failed');
+                        break;
+                        
+                    case 'analysis':
+                        const analysis = message.result;
+                        let html = '<div class="analysis">';
+
+                        if (analysis.type) {
+                            html += \`
+                                <h3>📋 \${analysis.type}</h3>
+                            \`;
+                        }
+                        if (analysis.cause) {
+                            html += \`
+                                <div>
+                                    <strong>🔍 Root Cause:</strong> 
+                                    <span class="analysis-text" id="analysis-cause">\${analysis.cause}</span>
+                                    <button class="copy-btn" data-copy-target="analysis-cause">Copy</button>
+                                </div>
+                            \`;
+                        }
+                        if (analysis.solution) {
+                            html += \`
+                                <div>
+                                    <strong>🛠️ Solution:</strong> 
+                                    <span class="analysis-text" id="analysis-solution">\${analysis.solution}</span>
+                                    <button class="copy-btn" data-copy-target="analysis-solution">Copy</button>
+                                </div>
+                            \`;
+                        }
+                        if (analysis.prevention) {
+                            html += \`
+                                <div>
+                                    <strong>🛡️ Prevention:</strong> 
+                                    <span class="analysis-text" id="analysis-prevention">\${analysis.prevention}</span>
+                                    <button class="copy-btn" data-copy-target="analysis-prevention">Copy</button>
+                                </div>
+                            \`;
+                        }
+
+                        html += '</div>';
+                        result.innerHTML = html;
+
+                        // Attach copy button event listeners
+                        attachCopyButtons();
+
+                        hideSpinner();
+                        break;
                 }
+            });
 
-                if (event.data.type === 'analysis') {
-                    const analysis = event.data.result;
-                    let html = '';
-                    
-                    if (analysis.type) {
-                        html += '<div class="section">';
-                        html += '<div class="section-title">Error Type</div>';
-                        html += analysis.type;
-                        html += '</div>';
-                    }
+            // Attach event listeners to all copy buttons
+            function attachCopyButtons() {
+                const copyButtons = document.querySelectorAll('.copy-btn');
+                copyButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetId = btn.getAttribute('data-copy-target');
+                        copyTextFromElement(targetId);
+                    });
+                });
+            }
 
-                    if (analysis.cause) {
-                        html += '<div class="section">';
-                        html += '<div class="section-title">Root Cause</div>';
-                        html += analysis.cause;
-                        html += '</div>';
-                    }
-
-                    if (analysis.solution) {
-                        html += '<div class="section">';
-                        html += '<div class="section-title">Solution</div>';
-                        html += analysis.solution;
-                        html += '</div>';
-                    }
-
-                    if (analysis.prevention) {
-                        html += '<div class="section">';
-                        html += '<div class="section-title">Prevention</div>';
-                        html += analysis.prevention;
-                        html += '</div>';
-                    }
-
-                    result.innerHTML = html;
-                }
-
-                if (event.data.command === 'selectedText' && event.data.text) {
-                    errorInput.value = event.data.text;
+            // Support for keyboard shortcuts (Ctrl/Cmd + Enter)
+            errorInput.addEventListener('keydown', (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                    handleAnalyze();
                 }
             });
         </script>
@@ -291,7 +439,7 @@ function createWebviewPanel(context) {
         'errorAnalysis',
         'RN Error Analyzer',
         vscode.ViewColumn.Two,
-        { enableScripts: true }
+        { enableScripts: true, retainContextWhenHidden: true }
     );
 
     panel.webview.html = getWebviewContent();
